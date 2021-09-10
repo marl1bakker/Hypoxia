@@ -5,9 +5,9 @@
 %%
 datafolder = '/media/mbakker/disk1/Marleen/TheGirlz/';
 % mouse = 'Tom';
-mouse = 'Jane';
+% mouse = 'Jane';
 % mouse = 'Katy';
-% mouse = 'Nick';
+mouse = 'Nick';
 
 acquisition_norm = '/Normoxia_1';
 acquisition_hypox12 = '/Hypox_12';
@@ -23,7 +23,7 @@ path_norm2 = strcat(datafolder, mouse, acquisition_norm2);
 path_hypox10 = strcat(datafolder, mouse, acquisition_hypox10);
 path_norm3 = strcat(datafolder, mouse, acquisition_norm3);
 
-datafolder = path_norm3;
+datafolder = path_hypox10;
 cd(datafolder);
 videoname = mouse;
 
@@ -88,12 +88,13 @@ end
 
 imshowpair(HbO(:,:,1),HbR(:,:,1));
 
-load(strcat(path_norm,'/ROI_.mat'));
+load(strcat(path_norm,'/ROI_Stretched.mat'));
 HbR = HbR*1e6; %ga van mol naar micromol
 HbO = HbO*1e6;
 
 %% Make AllRois variables 
-load(strcat(path_norm,'/ROI_.mat'));
+% load(strcat(path_norm,'/ROI_.mat'));
+load(strcat(path_norm,'/ROI_Stretched.mat'));
 
 dat = reshape(HbR,dims);
 [CorrMatrix,CorrMatrixBefore,CorrMatrixHypox,CorrMatrixAfter,CorrMatrixHypoxMinusBefore,AllRois] = CorrelationMatrix(dat,ROI_info, {'CMatrixBefore','CMatrixHypox','CMatrixAfter','CMatrixDiff'});
@@ -106,6 +107,11 @@ movefile ./Figures/CMatrixHypoxia.png ./Figures/HbR
 movefile ./Figures/CMatrixBefore.png ./Figures/HbR
 movefile ./Figures/CMatrixAfter.png ./Figures/HbR
 
+mkdir ./Figures/HbRstretchedROI
+movefile ./Figures/CMatrixHypoxia.png ./Figures/HbRstretchedROI
+movefile ./Figures/CMatrixBefore.png ./Figures/HbRstretchedROI
+movefile ./Figures/CMatrixAfter.png ./Figures/HbRstretchedROI
+
 dat = reshape(HbO,dims);
 [CorrMatrix,CorrMatrixBefore,CorrMatrixHypox,CorrMatrixAfter,CorrMatrixHypoxMinusBefore,AllRois] = CorrelationMatrix(dat,ROI_info, {'CMatrixBefore','CMatrixHypox','CMatrixAfter','CMatrixDiff'});
 save('AllRoisHbO.mat', 'AllRois');
@@ -116,6 +122,11 @@ mkdir ./Figures/HbO
 movefile ./Figures/CMatrixHypoxia.png ./Figures/HbO
 movefile ./Figures/CMatrixBefore.png ./Figures/HbO
 movefile ./Figures/CMatrixAfter.png ./Figures/HbO
+
+mkdir ./Figures/HbOstretchedROI
+movefile ./Figures/CMatrixHypoxia.png ./Figures/HbOstretchedROI
+movefile ./Figures/CMatrixBefore.png ./Figures/HbOstretchedROI
+movefile ./Figures/CMatrixAfter.png ./Figures/HbOstretchedROI
 %% load data
 AllRoisHbR = load('AllRoisHbR.mat');
 AllRoisHbR = AllRoisHbR.AllRois;
@@ -140,6 +151,11 @@ saveas(gcf, './Figures/M1R.png');
 Hb_oneseed([BCL_HbO; BCL_HbR; BCL_HbR+BCL_HbO]')
 saveas(gcf, './Figures/BCL.png');
 
+Hb_oneseed([M1R_HbO; M1R_HbR; M1R_HbR+M1R_HbO]')
+saveas(gcf, './Figures/M1RstretchedROI.png');
+Hb_oneseed([BCL_HbO; BCL_HbR; BCL_HbR+BCL_HbO]')
+saveas(gcf, './Figures/BCLstretchedROI.png');
+
 %% Graphs
 HistogramInterIntra(AllRoisHbR, 'HbR Tom');
 close all
@@ -154,6 +170,12 @@ movefile ./Figures/MedianLineGraph.png ./Figures/HbR
 movefile ./Figures/MeanLineGraph.png ./Figures/HbR
 movefile ./Figures/Graph2D.png ./Figures/HbR
 
+movefile ./Figures/Histogram.png ./Figures/HbRstretchedROI
+movefile ./Figures/Scatterplot.png ./Figures/HbRstretchedROI
+movefile ./Figures/MedianLineGraph.png ./Figures/HbRstretchedROI
+movefile ./Figures/MeanLineGraph.png ./Figures/HbRstretchedROI
+movefile ./Figures/Graph2D.png ./Figures/HbRstretchedROI
+
 HistogramInterIntra(AllRoisHbO, 'HbO Tom');
 close all
 CorrelationLineGraphInterIntra(AllRoisHbO, 'HbO Tom');
@@ -167,6 +189,11 @@ movefile ./Figures/MedianLineGraph.png ./Figures/HbO
 movefile ./Figures/MeanLineGraph.png ./Figures/HbO
 movefile ./Figures/Graph2D.png ./Figures/HbO
 
+movefile ./Figures/Histogram.png ./Figures/HbOstretchedROI
+movefile ./Figures/Scatterplot.png ./Figures/HbOstretchedROI
+movefile ./Figures/MedianLineGraph.png ./Figures/HbOstretchedROI
+movefile ./Figures/MeanLineGraph.png ./Figures/HbOstretchedROI
+movefile ./Figures/Graph2D.png ./Figures/HbOstretchedROI
 
 %% Visualisation data
 HbO = reshape(HbO,dims(1),dims(2),[]);
@@ -196,7 +223,7 @@ AcqInfoStream = ReadInfoFile(datafolder);
 fid = fopen('green.dat');
 datg2 = fread(fid,inf,'*single');
 datg2 = reshape(datg2,dims(1),dims(2),[]);
-% datg2 = datg2 - mean(datg2, 3);
+datg2 = datg2 ./ mean(datg2, 3);
 figure;
 for ind = 1:1:12000
     imagesc((squeeze(datg2(:,:,ind))));
@@ -250,7 +277,7 @@ load('Mask.mat');
 Mask = imwarp(Mask, tform, 'OutputView',imref2d(size(Mask)));
 
 %to know when the hypoxia period was
-fileID = fopen('Acquisition_information');
+fileID = fopen('Acquisition_information.txt');
 bstop = 0;
 while (bstop == 0) || ~feof(fileID)
    Textline = fgetl(fileID);

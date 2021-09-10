@@ -1,18 +1,20 @@
 %% Once you get the data:
 datafolder = '/media/mbakker/disk1/Marleen/TheGirlz/';
-% mouse = 'Tom';
+mouse = 'Tom';
 % mouse = 'Jane';
-% mouse = 'Katy';
+mouse = 'Katy';
 mouse = 'Nick';
 
 acquisition_norm = '/Normoxia_1';
 acquisition_hypox12 = '/Hypox_12';
 acquisition_norm2 = '/Normoxia_2';
 acquisition_hypox10 = '/Hypox_10';
+acquisition_hypox8 = '/Hypox_8';
 
 path_norm = strcat(datafolder, mouse, acquisition_norm);
 path_hypox12 = strcat(datafolder, mouse, acquisition_hypox12);
 path_norm2 = strcat(datafolder, mouse, acquisition_norm2);
+path_hypox10 = strcat(datafolder, mouse, acquisition_hypox10);
 path_hypox10 = strcat(datafolder, mouse, acquisition_hypox10);
 
 currentacq = replace(acquisition_hypox10, '/', '');

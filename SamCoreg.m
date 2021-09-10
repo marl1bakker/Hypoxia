@@ -1,75 +1,61 @@
+function SamCoreg()
+
 fid = fopen('green.dat');
 dat = fread(fid, inf, '*single');
 dat = reshape(dat,192,192,[]);
 dat = flipud(rot90(dat));
-%%
-% D = abs(dat - dat(:,:,1));
 
+%% Preprocessing: Images preparation to optimize High spatial Frequencies
+DQ = parallel.pool.DataQueue;
+afterEach(DQ, @UpdateWB);
+p = 0;
+N = size(dat,3);
+h = waitbar(0);
 
-%%
-dat = dat - imgaussfilt(dat,2);
+parfor ind = 1:size(dat,3)
+   
+    Im = dat(:,:,ind) - imbothat(dat(:,:,ind),fspecial('disk',2)>0)...
+        + imtophat(dat(:,:,ind),fspecial('disk',2)>0);
+    Im(Im<0) = 0;
+    Im(Im>65535) = 65535; 
+    Im = round(65535*adapthisteq(Im./65535)); 
+    Im = Im - imgaussfilt(Im,16);
+    dat(:,:,ind) = (Im - min(Im(:)))./(max(Im(:)) - min(Im(:)));
 
-dat = (dat - min(min(dat,[],1),[],2))./(max(max(dat,[],1),[],2)-min(min(dat,[],1),[],2));
-
-parfor(ind = 1:48060, 23)
-    dat(:,:,ind) = adapthisteq(dat(:,:,ind)); 
+    send(DQ,ind);
 end
-%%
-Z1 = dat(50:90, 50:90, :);
+close(h)
+%% Rigid transformation: Rot + Translation
+[opt1, metric] = imregconfig('monomodal');
+opt1.GradientMagnitudeTolerance = 1e-3;
+opt1.MaximumIterations = 100;
+opt1.MaximumStepLength = 1e-3;
+opt1.MinimumStepLength = 1e-4;
+opt1.RelaxationFactor = 5e-1;
 
+T = zeros(3,3,size(dat,3));
+Demons = zeros(192,192,2,size(dat,3));
+Fixed = dat(:, : ,1);
+p = 0;
+N = size(dat,3);
+h = waitbar(0);
 
-dftregistration(fft(Z1(:,:,2000)), fft(Z1(:,:,1)), 10); 
-
-%% Visu
-
-figure;
-for ind = 1600:1:2200
-    imagesc(squeeze(dat(:,:,ind)));
-    title(int2str(ind))
-    pause(0.05)
-end
-
-%%
-[optimizer, metric] = imregconfig('monomodal');
-optimizer.GradientMagnitudeTolerance = 1e-6;
-optimizer.MaximumIterations = 1e3;
-optimizer.MaximumStepLength = 1e-2;
-optimizer.MinimumStepLength = 1e-6;
-optimizer.RelaxationFactor = 1e-1;
-
-T = zeros(3,3,48060);
-Fixed = dat(:,:,1);
-
-parfor( ind = 1800:2200,12)
-    %disp(ind)
-    Temp = imregtform(dat(:,:,ind),Fixed,'affine',optimizer,metric);
+parfor ind = 1:size(dat,3)
+    Temp = imregtform(dat(:,:,ind),Fixed,'affine',opt1,metric,'DisplayOptimization', false);
+    dat(:,:,ind) = imwarp(dat(:,:,ind), Temp, 'cubic',...
+        'OutputView', imref2d([192,192]));
     T(:,:,ind) = Temp.T;
-    %plot(squeeze(T(3,1,:)));
-%     plot(squeeze(sqrt(T(3,1,:).^2 + T(3,2,:).^2)),'.');
-%     pause(0.01);
+   [D,movingReg] = imregdemons(dat(:,:,ind),Fixed,[200 150 100], ...
+       'PyramidLevels', 3, 'AccumulatedFieldSmoothing', 1.5,...
+       'DisplayWaitbar', false);
+   Demons(:,:,:,ind) = D;
+   dat(:,:,ind) = movingReg;
+   send(DQ,ind);
 end
-%%
-V = (squeeze(sqrt(T(3,1,1:250:48060).^2 + T(3,2,1:250:48060).^2)));
 
-idx = find(ischange(V,'linear','Threshold', 0.005));
-% 
-% for indX = 1:size(idx,1)
-%     fStart = 250*(idx(indX)-2) + 1;
-%     fEnd = fStart + 250;
-%     for indF = fStart:10:fEnd
-%         disp(indF)
-%         Temp = imregtform(dat(:,:,indF),dat(:,:,1),'rigid',optimizer,metric);
-%         T(:,:,indF) = Temp.T;
-%         %plot(squeeze(T(3,1,:)));
-%         plot(squeeze(sqrt(T(3,1,:).^2 + T(3,2,:).^2)));
-%         pause(0.01);
-%     end
-% end
+    function UpdateWB(~)
+        p = p + 1;
+        waitbar(p/N,h);
+    end
 
-
-
-for ind = 1800:2200
-    tform = affine2d;
-    tform.T = squeeze(T(:,:,ind));
-    dat(:,:,ind) = imwarp(squeeze(dat(:,:,ind)), tform, 'OutputView', imref2d([192,192]));
 end

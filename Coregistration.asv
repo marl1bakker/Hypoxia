@@ -8,13 +8,6 @@ dat = reshape(dat, 192,192,[]);
 fclose(fid);
 datg_n = dat;
 
-%make sure its always the right side up
-if( exist([path_fixed filesep 'IntraCoReg.mat'], 'file') ) 
-    %maybe check at some point to make this code less crappy Marleen....
-else
-    datg_n = permute(datg_n,[2,1,3]);
-end
-
 cd(path_moving);
 fid = fopen('green.dat');
 dat = fread(fid, inf, '*single');
@@ -23,11 +16,13 @@ fclose(fid);
 datg_h = dat;
 clear dat;
 
-if( exist([path_moving filesep 'IntraCoReg.mat'], 'file') ) 
+%make sure its always the right side up
+if( exist([path_fixed filesep 'IntraCoReg.mat'], 'file') ) 
     
 else
-    datg_h = permute(datg_h,[2,1,3]);
+    datg_n = permute(datg_n,[2,1,3]);
 end
+
 %% Step 2: Mask
 cd(path_fixed);
 MaskN = load('Mask.mat');
