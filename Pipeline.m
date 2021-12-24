@@ -1,26 +1,36 @@
 %% Klad 9 - All mice, per acquisition
 %% Get right acquisition
-datafolder = '/media/mbakker/disk1/Marleen/TheGirlz/';
-Mice = {'Tom','Nick', 'Jane','Katy'}
-% Mice = {'Tom'}
-
-% acquisition = '/Hypox_8';
-% acquisition = '/Normoxia_1';
-% acquisition = '/Normoxia_4';
-
-% acquisition = '/Normoxia_3';
-acquisition = '/Hypox_10';
+% batch = '/media/mbakker/data1/Hypoxia/TheGirlz/';
+% Mice = {'Tom', 'Jane', 'Nick'}
+% Mice = {'Nick'}
+% 
+% batch = '/media/mbakker/data1/Hypoxia/TheBoys/';
+% % Mice = { 'Chiploos', '087', '227', '552'}; 
+% % Mice = {'552'};
+% % Mice = {'1Stripe_normoxia3_20210928', '2Stripe_normoxia3_20210928', '3Stripe_normoxia3_20210928','Chiploos_normoxia3_20210928'};
+% % batch = '/media/mbakker/data1/Hypoxia/TheBoys';
+% % acquisition = '/Normoxia_3';
+% % Mice = { '227' }; 
+% % 
+% acquisition = '/Normoxia_1'
+% acquisition = '/Hypox_12'
 
 %% Preprocessing (imageclassification, coregistration within mouse, hemodynamic correction)
+cd(batch)
+% PreProcessing(acquisition, batch, Mice);
 
-PreProcessing(acquisition);
-disp('donethis part')
+% disp('donethis part')
 %%
 
 for index = 1:size(Mice,2)
     mouse = Mice{index}
+    datafolder = batch;
     datafolder = strcat(datafolder, mouse, acquisition);
     cd(datafolder);
+    
+    if ~exist('fChanCor.dat','file')
+        PreProcessing(acquisition, batch, {mouse});
+    end
     videoname = mouse;
     
     %% load hemocorrected data
@@ -34,13 +44,17 @@ for index = 1:size(Mice,2)
     if( exist([pwd filesep 'IntraCoReg.mat'], 'file') )
         disp('Coregistration within has been done')
     else
-        dat=permute(dat,[2,1,3]);
+%         dat=permute(dat,[2,1,3]);
         disp('Coregistration within has NOT been done')
     end
+%     
+%     if contains(acquisition, 'Normoxia_1')
+%         dat = permute(dat, [2 1 3]);
+%     end
     
     dims = size(dat);
     videoname = strcat(videoname, ', Hemodynamic Correction')
-
+    
     %% Make or load mask
     fid = fopen('green.dat'); %maak anatomical map
     AnaMap = fread(fid, dims(1)*dims(2),'*single');
@@ -65,30 +79,40 @@ for index = 1:size(Mice,2)
         imagesc(Mask)
         save('Mask.mat', 'Mask');
         load('Mask.mat');
+        close all
     end
 
     %% Coregistration between acquisitions
+    % check Coregistration - welke kant is boven 
     if  contains(acquisition, 'Normoxia_1')
         disp('Normoxia 1 acquisition, so no coregistration')
-    else
-        path_norm = strcat('/media/mbakker/disk1/Marleen/TheGirlz/', mouse, '/Normoxia_1');
+    elseif ( exist([pwd filesep 'tform.mat'], 'file') )
+        fprintf('coregistration between acquisitions already done')
+        load('tform.mat')
+        AnaMap = imwarp(AnaMap, tform, 'OutputView',imref2d(size(AnaMap))); %transformeer anamap en mask naar coregistration parameters
+        Mask = imwarp(Mask, tform, 'OutputView',imref2d(size(Mask))); %zelfde voor mask
+        
+    else            
+        path_norm = strcat(batch, mouse, '/Normoxia_1');
         datnorm = Coregistration(path_norm, datafolder);
         
         cd(datafolder); %niet nodig denk ik maar toch maar doen voor de zekerheid
         fid = fopen([datafolder filesep 'fChanCor.dat'],'w');
         fwrite(fid,dat,'*single');
         fclose(fid); %sla coregistered image op als fchancor
+        fprintf('coregistration between acquisitions done')
+        
+        load('tform.mat')
+        AnaMap = imwarp(AnaMap, tform, 'OutputView',imref2d(size(AnaMap))); %transformeer anamap en mask naar coregistration parameters
+        Mask = imwarp(Mask, tform, 'OutputView',imref2d(size(Mask))); %zelfde voor mask
+        
+        %     %to check
+        %     Maskn = load(strcat(path_norm,'/Mask.mat'));
+        %     imshowpair(Mask,Maskn.Mask);
     end
-    
-    load('tform.mat')
-    AnaMap = imwarp(AnaMap, tform, 'OutputView',imref2d(size(AnaMap))); %transformeer anamap en mask naar coregistration parameters
-    Mask = imwarp(Mask, tform, 'OutputView',imref2d(size(Mask))); %zelfde voor mask
-
-%     %to check
-%     Maskn = load(strcat(path_norm,'/Mask.mat'));
-%     imshowpair(Mask,Maskn.Mask);
-
+    close all
     videoname = strcat(videoname, ', Coreg')
+    
 
     %% Normalisation and frequency filtering
     dat = NormalisationFiltering(dat, 0.3, 3, 1); %1 is voor delen door, 0 is voor min voor hbo/hbr
@@ -97,22 +121,24 @@ for index = 1:size(Mice,2)
     
     %% ROI
     % Make a map based on the functional data you gathered
-    path_norm = ['/media/mbakker/disk1/Marleen/TheGirlz' filesep mouse filesep 'Normoxia_1'];
+    path_norm = [batch filesep mouse filesep 'Normoxia_1'];
     FuncMap = sum(abs(dat-1),3);
     P = prctile(FuncMap(Mask(:)),[1 99]);
     FuncMap = (FuncMap - P(1))./(P(2) - P(1));
     FuncMap(FuncMap<0) = 0;
     FuncMap(FuncMap>1) = 1;
     
-    if( exist([pwd filesep 'Mask.mat'], 'file') )
-        %         load(strcat(path_norm,'/ROI_.mat'));
-        load(strcat(path_norm,'/ROI_Stretched.mat'));
+%     if  contains(acquisition, 'Normoxia_1') %als het Norm1 is moet je nog ROI maken
+%     if exist(strcat(path_norm,'/ROI_.mat'));
+    if ( exist([path_norm filesep '/ROI_149.mat'], 'file') )
+        load(strcat(path_norm,'/ROI_149.mat'));
     else
         ROImanager(FuncMap.*Mask)
-        load(strcat(path_norm,'/ROI_Stretched.mat'));
+        load(strcat(path_norm,'/ROI_149.mat'));
     end
     
     %% Correlation matrix without GSR
+    mkdir('Figures')
     dat = reshape(dat,dims(1),dims(2),[]);
     [CorrMatrix,CorrMatrixBefore,CorrMatrixHypox,CorrMatrixAfter,CorrMatrixHypoxMinusBefore,AllRois] = CorrelationMatrix(dat,ROI_info, {'CMatrixBefore','CMatrixHypox','CMatrixAfter','CMatrixDiff'});
     close all
@@ -132,15 +158,15 @@ for index = 1:size(Mice,2)
     Graph2D(AllRois, videoname);
     close all
 
-    mkdir ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/CMatrixHypoxia.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/CMatrixBefore.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/CMatrixAfter.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/Histogram.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/Scatterplot.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/MedianLineGraph.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/MeanLineGraph.png ./Figures/WithoutGSRstretchedROI
-    movefile ./Figures/Graph2D.png ./Figures/WithoutGSRstretchedROI
+    mkdir ./Figures/WithoutGSR
+    movefile ./Figures/CMatrixHypoxia.png ./Figures/WithoutGSR
+    movefile ./Figures/CMatrixBefore.png ./Figures/WithoutGSR
+    movefile ./Figures/CMatrixAfter.png ./Figures/WithoutGSR
+    movefile ./Figures/Histogram.png ./Figures/WithoutGSR
+    movefile ./Figures/Scatterplot.png ./Figures/WithoutGSR
+    movefile ./Figures/MedianLineGraph.png ./Figures/WithoutGSR
+    movefile ./Figures/MeanLineGraph.png ./Figures/WithoutGSR
+    movefile ./Figures/Graph2D.png ./Figures/WithoutGSR
 
     %% GSR (Global Signal Regression)
     dat = reshape(dat,[], dims(3));
@@ -174,15 +200,15 @@ for index = 1:size(Mice,2)
     Graph2D(AllRois, videoname);
     close all
 
-    mkdir ./Figures/WithGSRstretchedROI
-    movefile ./Figures/CMatrixHypoxia.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/CMatrixBefore.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/CMatrixAfter.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/Histogram.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/Scatterplot.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/MedianLineGraph.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/MeanLineGraph.png ./Figures/WithGSRstretchedROI
-    movefile ./Figures/Graph2D.png ./Figures/WithGSRstretchedROI
+    mkdir ./Figures/WithGSR
+    movefile ./Figures/CMatrixHypoxia.png ./Figures/WithGSR
+    movefile ./Figures/CMatrixBefore.png ./Figures/WithGSR
+    movefile ./Figures/CMatrixAfter.png ./Figures/WithGSR
+    movefile ./Figures/Histogram.png ./Figures/WithGSR
+    movefile ./Figures/Scatterplot.png ./Figures/WithGSR
+    movefile ./Figures/MedianLineGraph.png ./Figures/WithGSR
+    movefile ./Figures/MeanLineGraph.png ./Figures/WithGSR
+    movefile ./Figures/Graph2D.png ./Figures/WithGSR
 
 end
 

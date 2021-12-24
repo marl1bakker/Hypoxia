@@ -1,5 +1,5 @@
 function [CMatrixWholeAcq, CMatrixBefore, CMatrixHypox, CMatrixAfter, CMatrixDiff, AllRois] ...
-    = CorrelationMatrix(data, ROI, FigureOutput)
+    = CorrelationMatrix(data, DataFolder, ROI, FigureOutput)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to make correlation matrixes, based on the correlation between 
 %%% two seeds in the brain
@@ -10,21 +10,30 @@ function [CMatrixWholeAcq, CMatrixBefore, CMatrixHypox, CMatrixAfter, CMatrixDif
 % brainmask
 % Registered Allen atlas
 
+disp(DataFolder)
+if( ~strcmp(DataFolder(end), filesep) )
+    DataFolder = [DataFolder filesep];
+end
+
 dims = size(data);
 dd = load('mouse_ctx_borders.mat','atlas');
 roi.tags = dd.atlas.areatag;
 
 %to know when the hypoxia period was
-fileID = fopen('Acquisition_information.txt');
-bstop = 0;
-while (bstop == 0) || ~feof(fileID)
-   Textline = fgetl(fileID);
-   if endsWith(Textline,'min')
-       bstop = 1;
-   end
+if( exist([DataFolder filesep 'Acquisition_information.txt'], 'file') )
+    fileID = fopen([DataFolder 'Acquisition_information.txt']);
+    bstop = 0;
+    while (bstop == 0) || ~feof(fileID)
+        Textline = fgetl(fileID);
+        if endsWith(Textline,'min')
+            bstop = 1;
+        end
+    end
+    hypoxmin = str2num(Textline(1:2));
+else
+    hypoxmin = 10;
 end
 
-hypoxmin = str2num(Textline(1:2));
 hypoxbegin = hypoxmin * 60 * 20;
 hypoxend = hypoxbegin + 12000;
 
@@ -101,7 +110,7 @@ if( any(contains(FigureOutput, 'CMatrixBefore')) )
     xtickangle(90)
     colormap jet
     title(strcat('Correlation Matrix Before Hypoxia'))
-    saveas(gcf, './Figures/CMatrixBefore.png');
+    saveas(gcf, [DataFolder 'Figures/CMatrixBefore.png']);
 end
 
 if( any(contains(FigureOutput, 'CMatrixHypox')) )
@@ -118,7 +127,7 @@ if( any(contains(FigureOutput, 'CMatrixHypox')) )
     xtickangle(90)
     colormap jet
     title(strcat('Correlation Matrix During Hypoxia'))
-    saveas(gcf, './Figures/CMatrixHypoxia.png');
+    saveas(gcf, [DataFolder 'Figures/CMatrixHypoxia.png']);
 end
 
 if( any(contains(FigureOutput, 'CMatrixAfter')) )
@@ -135,7 +144,7 @@ if( any(contains(FigureOutput, 'CMatrixAfter')) )
     xtickangle(90)
     colormap jet
     title(strcat('Correlation Matrix After Hypoxia'))
-    saveas(gcf, './Figures/CMatrixAfter.png');
+    saveas(gcf, [DataFolder 'Figures/CMatrixAfter.png']);
 end
 
 if( any(contains(FigureOutput, 'CMatrixDiff')) )

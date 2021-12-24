@@ -28,15 +28,6 @@ acquisition_norm = '/Normoxia_1';
 % acquisition_norm3 = '/Normoxia_3';
 acquisition_hypox8_1 = '/Hypox_8_1';
 
-cd 
-
-for index = 1:size(Mice,2)
-    mouse = Mice{index}
-    datafolder = batch;
-    datafolder = strcat(datafolder, mouse, acquisition);
-    cd(datafolder);
-    videoname = mouse;
-
 path_norm = strcat(datafolder, mouse, acquisition_norm);
 % path_hypox12 = strcat(datafolder, mouse, acquisition_hypox12);
 % path_norm2 = strcat(datafolder, mouse, acquisition_norm2);

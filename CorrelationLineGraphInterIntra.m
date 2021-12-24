@@ -2,16 +2,19 @@ function CorrelationLineGraphInterIntra(AllRois, Title)
 
 %% Get right parameters
 %to know when the hypoxia period was
-fileID = fopen('Acquisition_information.txt');
-bstop = 0;
-while (bstop == 0) || ~feof(fileID)
-   Textline = fgetl(fileID);
-   if endsWith(Textline,'min')
-       bstop = 1;
-   end
+if( exist([pwd filesep 'Acquisition_information.txt'], 'file') )
+    fileID = fopen('Acquisition_information.txt');
+    bstop = 0;
+    while (bstop == 0) || ~feof(fileID)
+        Textline = fgetl(fileID);
+        if endsWith(Textline,'min')
+            bstop = 1;
+        end
+    end
+    hypoxmin = str2num(Textline(1:2));
+else
+    hypoxmin = 10;
 end
-
-hypoxmin = str2num(Textline(1:2));
 hypoxbegin = hypoxmin * 60 * 20;
 hypoxend = hypoxbegin + 12000;
 

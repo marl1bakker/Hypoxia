@@ -1,16 +1,20 @@
 function HistogramInterIntra(AllRois, Title)
 
 %to know when the hypoxia period was
-fileID = fopen('Acquisition_information.txt');
-bstop = 0;
-while (bstop == 0) || ~feof(fileID)
-   Textline = fgetl(fileID);
-   if endsWith(Textline,'min')
-       bstop = 1;
-   end
+if( exist([pwd filesep 'Acquisition_information.txt'], 'file') )
+    fileID = fopen('Acquisition_information.txt');
+    bstop = 0;
+    while (bstop == 0) || ~feof(fileID)
+        Textline = fgetl(fileID);
+        if endsWith(Textline,'min')
+            bstop = 1;
+        end
+    end
+    hypoxmin = str2num(Textline(1:2));
+else
+    hypoxmin = 10;
 end
 
-hypoxmin = str2num(Textline(1:2));
 hypoxbegin = hypoxmin * 60 * 20;
 hypoxend = hypoxbegin + 12000;
 
@@ -57,6 +61,8 @@ hold
 histogram(IntraDiff, -0.5:0.015:0.5);
 legend('Inter', 'Intra')
 title(Title)
+xlabel('Change in correlation')
+ylabel('Number of seed pairs')
 saveas(gcf, './Figures/Histogram.png');
 
 figure()
@@ -69,6 +75,8 @@ ylim([0 1])
 line('LineWidth', 1.5);
 hl = legend([p1,p2,p3],'Left', 'Right', 'Inter', 'Location','northwest')
 title(Title)
+xlabel('Normoxia')
+ylabel('Hypoxia or Sham')
 saveas(gcf, './Figures/Scatterplot.png');
 
 % 

@@ -1,10 +1,14 @@
-function PreProcessing(acquisition)
-
+function PreProcessing(acquisition, batch, Mice)
+fprintf('start preprocessing')
 %% Image Classification and Hemodynamic correction
-Mice = {'Tom','Nick', 'Jane','Katy'}
+% Mice = {'Tom','Nick', 'Jane','Katy'}
 % Mice = {'Nick', 'Jane','Katy'}
-% Mice = {'Tom'}
-% acquisition = '/Normoxia_3';
+% Mice = {'Nick'}
+% Mice = {'227', '552', '087'}
+% batch = '/media/mbakker/data1/Hypoxia/TheBoys/';
+% batch = '/media/mbakker/data1/Hypoxia/TheGirlz/';
+% batch = pwd;
+
 colours = {'green','red', 'yellow','fluo_475'};
 
 for ind = 1:size(Mice,2)
@@ -12,9 +16,11 @@ for ind = 1:size(Mice,2)
     
     try  % to make sure one error doesnt disrupt everything
         %get to right folder
-        datafolder = '/media/mbakker/disk1/Marleen/TheGirlz/';
+%         datafolder = '/media/mbakker/disk1/Marleen/TheGirlz/';
+%         datafolder = '/media/mbakker/data1/Hypoxia/TheGirlz/';
         %         datafolder = strcat(datafolder, mouse, '/', acquisition);
-        datafolder = strcat(datafolder, mouse, acquisition);
+%         datafolder = ;
+        datafolder = strcat(batch, '/', mouse, '/', acquisition );
         cd(datafolder);
         mkdir Figures;
         
@@ -65,7 +71,7 @@ for ind = 1:size(Mice,2)
             
             
             %% Hemo Correction
-            dat = HemoCorrection(pwd,{'Green','Red','Yellow'});
+            dat = HemoCorrection(datafolder,{'Green','Red','Yellow'});
             fid = fopen('fChanCor.dat','w');
             fwrite(fid,dat,'*single');
             fclose(fid);

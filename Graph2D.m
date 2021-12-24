@@ -1,16 +1,19 @@
 function Graph2D(AllRois,Title)
 %% Correlations over timecourse -- line graphs (2D graphs)
 %to know when the hypoxia period was
-fileID = fopen('Acquisition_information.txt');
-bstop = 0;
-while (bstop == 0) || ~feof(fileID)
-   Textline = fgetl(fileID);
-   if endsWith(Textline,'min')
-       bstop = 1;
-   end
+if( exist([pwd filesep 'Acquisition_information.txt'], 'file') )
+    fileID = fopen('Acquisition_information.txt');
+    bstop = 0;
+    while (bstop == 0) || ~feof(fileID)
+        Textline = fgetl(fileID);
+        if endsWith(Textline,'min')
+            bstop = 1;
+        end
+    end
+    hypoxmin = str2num(Textline(1:2));
+else
+    hypoxmin = 10;
 end
-
-hypoxmin = str2num(Textline(1:2));
 hypoxbegin = hypoxmin * 60 * 20;
 hypoxend = hypoxbegin + 12000;
 
@@ -59,5 +62,7 @@ line([1, size(C,1)], [size(idxR,2) + size(idxL,2), size(idxR,2) + size(idxL,2)],
 line([1, size(C,1)], [size(idxL,2), size(idxL,2)],...
     'Color','black','LineWidth', 2,'LineStyle',':');
 
+xlabel('Seed pairs R - L - X')
+ylabel('frames')
 saveas(gcf, './Figures/Graph2D.png');
 
