@@ -1,4 +1,4 @@
-%% SPO2 calculation and plotting
+%% SPO2 calculation 
 % ManualInput 1 = overwrite any files that are already there
 % ManualInput 0 = Dont overwrite files that are there, skip those
 % acquisitions
@@ -10,7 +10,7 @@ if( ~strcmp(DataFolder(end), filesep) )
 end
 
 %check eerst of je hbo en hbr hebt
-if( ~exist([DataFolder 'HbO.mat'], 'file') )
+if( ~exist([DataFolder 'HbO.dat'], 'file') )
     disp([DataFolder ' HbO and HbR not calculated'])
     return
 end
@@ -27,17 +27,25 @@ if( ManualInput == 0 ) && ( exist([DataFolder 'spO2.dat'], 'file') )
 end
     
 %load data
-HbO = load([DataFolder, 'HbO.mat']);
-HbO = HbO.HbO + 60;
-HbR = load([DataFolder, 'HbR.mat']);
-HbR = HbR.HbR + 40;
-Mask = load([DataFolder, 'Mask.mat']);
+% HbO = load([DataFolder, 'HbO.mat']);
+% HbO = HbO.HbO + 60;
+fid = fopen([DataFolder 'HbO.dat']);
+HbO = fread(fid,  inf, '*single');
+HbO = reshape(HbO, 192, 192, []);
+HbO = HbO + 60;
+% HbR = load([DataFolder, 'HbR.mat']);
+% HbR = HbR.HbR + 40;
+fid = fopen([DataFolder 'HbR.dat']);
+HbR = fread(fid,  inf, '*single');
+HbR = reshape(HbR, 192, 192, []);
+HbR = HbR + 40;
+Mask = load([DataFolder, 'MaskC.mat']); %load MaskC because that one is coregistered
 Mask = Mask.Mask;
 Mask = double(Mask);
 Mask(Mask==0) = NaN;
 HbO = HbO .* Mask;
 HbR = HbR .* Mask;
-HbT = HbO+HbR;
+HbT = HbO + HbR;
 
 spO2 = HbO ./ HbT;
 clear HbO HbT Mask
@@ -46,5 +54,5 @@ clear HbO HbT Mask
 fid = fopen([DataFolder 'spO2.dat'],'w');
 fwrite(fid, spO2,'single');
 
-disp([DataFolder 'done'])
+% disp([DataFolder 'done'])
 end

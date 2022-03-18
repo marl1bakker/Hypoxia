@@ -61,7 +61,7 @@ clear daty;
  
 %% calculate stuff
 eps = ioi_epsilon_pathlength('Hillman', 100, 60, 40, 0); %get pathlengths
-Ainv = pinv(eps); %pseudoinverse of eps matrix (inverse niet mogelijk, want niet vierkant, dus soort benadering - Moore-penrose))
+Ainv = pinv(eps); %pseudoinverse of eps matrix (inverse not possible, because not square, so do sort of proximation - Moore-penrose))
 
 Hbs = Ainv*C';
 
@@ -104,13 +104,25 @@ imshowpair(HbO(:,:,1),HbR(:,:,1));
 HbR = HbR*1e6; %ga van mol naar micromol
 HbO = HbO*1e6;
 
+% NEW - make sure that your HbT doesnt get close to zero or below, and that
+% your HbO and HbR dont go below zero.
+HbO(HbO <= -60) = NaN; %60 is baseline hbo
+HbR(HbR <= -40) = NaN; %40 is baseline hbr
+
+% NEW- 16-3-2022 - delete outliers
+
+
 %% Save the data
-save([DataFolder 'HbO.mat'], 'HbO', '-v7.3');
-save([DataFolder 'HbR.mat'], 'HbR', '-v7.3');
+fid = fopen([DataFolder 'HbO.dat'],'w');
+fwrite(fid, HbO,'single');
+
+fid = fopen([DataFolder 'HbR.dat'],'w');
+fwrite(fid, HbR,'single');
+    
+% save([DataFolder 'HbO.mat'], 'HbO', '-v7.3');
+% save([DataFolder 'HbR.mat'], 'HbR', '-v7.3');
 
 close all
 
 end
-    
-
 

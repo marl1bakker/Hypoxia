@@ -1,3 +1,9 @@
+
+% load('Glist.mat')
+% for index = 1:size(Glist,2)
+%     HypoxPipeline(Glist(index).name, 0)
+% end
+
 function HypoxPipeline(DataFolder, ManualInput)
 %ManualInput: wil je tijdends het runnen van de pipeline alles doen waarbij
 %je dus ook MAsk en ROI moet maken, of wil je hem laten runnen als je er
@@ -168,7 +174,6 @@ if( isempty(varlist) || (~isfield(anaReg.Normalization, 'ended')) )
     anaReg.Normalization = [];
     Normalization.started = datestr(now);
     try 
-        %% Marleen's toevoeging -- dubbelcheck
         if ~exist('dat', 'var')
             fid = fopen([DataFolder 'fChanCor.dat']);
             dat = fread(fid,inf,'*single');
@@ -208,7 +213,6 @@ if( ~contains(DataFolder, 'Normoxia_1') )
         try
             tform = affine2d();
             load([DataFolder 'tform.mat'])
-            %% Marleen's toevoeging -- dubbelcheck
             if ~exist('dat', 'var')
                 fid = fopen([DataFolder 'fChanCor.dat']);
                 dat = fread(fid,inf,'*single');
@@ -217,11 +221,6 @@ if( ~contains(DataFolder, 'Normoxia_1') )
                 fclose(fid);
                 clear Infos fid
             end
-            
-%             if( ~exist('tform', 'var') )
-%                 disp('loading...')
-%                 load([DataFolder 'tform.mat']);
-%             end
             
             parfor( ind = 1:size(dat,3), 4 ) 
                 dat(:,:,ind) = imwarp(dat(:,:,ind), tform, 'OutputView',imref2d([192, 192]),'interp','nearest');
@@ -257,6 +256,8 @@ if( ~contains(DataFolder, 'Normoxia_1') )
         clear AnaMap fid ind Mask tform InterCoregApp
     end
 else
+    load([DataFolder 'Mask.mat']);
+    save([DataFolder 'MaskC.mat'], 'Mask');
     disp('Normoxia 1 - no Intercoreg')
 end
 
@@ -264,11 +265,11 @@ end
 disp('HbO HbR calculation')
 varlist = who(anaReg,'HbOHbR');
 
-if( isempty(varlist) || (~isfield(anaReg.HbOHbR, 'ended')) )
+% if( isempty(varlist) || (~isfield(anaReg.HbOHbR, 'ended')) )
     anaReg.HbOHbR = [];
     HbOHbRvar.started = datestr(now);
     try
-        HbOHbRCalculation(DataFolder, 0);  %0 is negeer niet als files al bestaan, 1 is negeer het wel en overwrite
+        HbOHbRCalculation(DataFolder, 1);  %0 is negeer niet als files al bestaan, 1 is negeer het wel en overwrite
         HbOHbRvar.ended = datestr(now);
     catch e
         disp(['HbOHbR error' DataFolder])
@@ -279,13 +280,39 @@ if( isempty(varlist) || (~isfield(anaReg.HbOHbR, 'ended')) )
     end
     anaReg.HbOHbR = HbOHbRvar;
     clear HbOHbRvar 
-else
-    disp('already done.')
-end
+% else
+%     disp('already done.')
+% end
+
+%% SpO2 calculation 
+disp('spO2 calculation')
+varlist = who(anaReg,'spO2');
+
+% if( isempty(varlist) || (~isfield(anaReg.spO2, 'ended')) )
+    anaReg.spO2 = [];
+    spO2var.started = datestr(now);
+    try
+        spO2Calculation(DataFolder, 1);  %0 is negeer niet als files al bestaan, 1 is negeer het wel en overwrite
+        spO2var.ended = datestr(now);
+    catch e
+        disp(['spO2 error' DataFolder])
+        spO2var.error = datestr(now);
+        spO2var.def = e;
+        anaReg.spO2 = spO2var;
+        throw(e)
+    end
+    anaReg.spO2 = spO2var;
+    clear spO2var 
+% else
+%     disp('already done.')
+% end
 
 disp('Everything done! yay')
 close all
 clear anaReg DataFolder Mask varlist
 % pause(10);
 % disp('end of pause')
+
+
+
 end

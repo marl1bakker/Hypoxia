@@ -30,6 +30,7 @@ for ind = 5:7
 end
 
 % run and make mask and roi
+load('/media/mbakker/data1/Hypoxia/Glist.mat');
 for ind = 1:size(Glist,2)
     HypoxPipeline(Glist(ind).name, 1);
 end
