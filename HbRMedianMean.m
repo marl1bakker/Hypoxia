@@ -47,16 +47,17 @@ for ind = 1:size(Glist,2)
     idx = strfind(Glist(ind).name, filesep); %zoek alle plekken van fileseps in naam
     pathFixed = [Glist(ind).name(1:idx(end)) 'Normoxia_1']; %pak naam tot laatste filesep, plak normoxia 1 achter
     load([pathFixed filesep 'ROI_149.mat']);
-    clear idx fid
+    clear fid
     
     Atlas = zeros(192);
     for indA = 1:size(ROI_info,2)
         Atlas(ROI_info(indA).Stats.ROI_binary_mask) = indA;
     end
-    OldMask = load([Glist(ind).name filesep 'MaskC.mat']); % om saturatie per acquisition weg te halen
+%     OldMask = load([Glist(ind).name filesep 'MaskC.mat']); % om saturatie per acquisition weg te halen
+    OldMask = load([Glist(ind).name(1:idx(end)) 'Mask.mat']); %get general mask of mouse
     OldMask = OldMask.Mask;
     Atlas = Atlas .*OldMask; %spo2 file is already within mask, but atlas file isnt yet
-    clear indA OldMask
+    clear indA OldMask idx
     
     idx = arrayfun(@(x) endsWith(ROI_info(x).Name, '_L'), 1:size(ROI_info,2));
     RH_Mask = imfill(bwmorph(ismember(Atlas,find(~idx)) ,'close',inf),'holes');
@@ -125,6 +126,22 @@ for ind = 1:size(Glist,2)
         mean_HbR_list(ind, :) = CorrectedHbRmean;
     end
 end
+
+%Delete Katy after first 8% hypoxia because went back too late
+for ind = 1:size(Glist,2)
+    idx = strfind(Glist(ind).name, 'Hypox_8_1'); 
+    index = strfind(Glist(ind).name, 'Katy');
+    if ~isempty(idx) && ~isempty(index)
+        CorrectedHbRmedian = median_HbR_list(ind, 1:24000); %remove last minutes, after error
+        CorrectedHbRmedian(:,end+1:48000) = missing;
+        median_HbR_list(ind, :) = CorrectedHbRmedian;
+        
+        CorrectedHbRmean = mean_HbR_list(ind, 1:24000);
+        CorrectedHbRmean(:,end+1:48000) = missing;
+        mean_HbR_list(ind, :) = CorrectedHbRmean;
+    end
+end
+
 
 save('/media/mbakker/data1/Hypoxia/Hemodynamics/HbRmean.mat', 'mean_HbR_list')
 save('/media/mbakker/data1/Hypoxia/Hemodynamics/HbRmedian.mat', 'median_HbR_list')

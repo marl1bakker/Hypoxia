@@ -57,10 +57,10 @@ for index = 1:size(HypoxiaLevels, 2)
             
             % peak is around 10.07 minutes, so frame 12084
             peak = [peak; mean(Data(ind,...
-                CenterOfPeak-(0.5*Window):CenterOfPeak+(0.5*Window)))]; %get a window around the peak of spO2 of 50 frames
+                CenterOfPeak-(0.5*Window):CenterOfPeak+(0.5*Window)), 'omitnan')]; %get a window around the peak of spO2 of 50 frames
             
             baseline = [baseline; mean(Data(ind,...
-                CenterOfBaseline-(0.5*Window):CenterOfBaseline+(0.5*Window)))]; %get a window a minute before the peak, as a baseline to compare to
+                CenterOfBaseline-(0.5*Window):CenterOfBaseline+(0.5*Window)), 'omitnan')]; %get a window a minute before the peak, as a baseline to compare to
             
             maxpeak = [maxpeak, max(Data(ind,...
                 CenterOfPeak-(0.5*Window):CenterOfPeak+(0.5*Window)))];
@@ -74,10 +74,10 @@ for index = 1:size(HypoxiaLevels, 2)
     
     [~,p] = ttest(peak, baseline); %get p-value for the peak
     pvalues = [pvalues; p];
-    AveragePeak = [AveragePeak; mean(peak), std(peak)];
-    AverageBaseline = [AverageBaseline; mean(baseline), std(baseline)];
-    MaxPeak = [MaxPeak; mean(maxpeak), std(maxpeak)];
-    MinPeak = [MinPeak; mean(minpeak), std(minpeak)];
+    AveragePeak = [AveragePeak; mean(peak, 'omitnan'), std(peak, 'omitnan')];
+    AverageBaseline = [AverageBaseline; mean(baseline, 'omitnan'), std(baseline, 'omitnan')];
+    MaxPeak = [MaxPeak; mean(maxpeak, 'omitnan'), std(maxpeak, 'omitnan')];
+    MinPeak = [MinPeak; mean(minpeak, 'omitnan'), std(minpeak, 'omitnan')];
     
 end
 

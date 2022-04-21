@@ -3,7 +3,6 @@
 % for index = 1:size(Glist,2)
 %     HypoxPipeline(Glist(index).name, 0)
 % end
-
 function HypoxPipeline(DataFolder, ManualInput)
 %ManualInput: wil je tijdends het runnen van de pipeline alles doen waarbij
 %je dus ook MAsk en ROI moet maken, of wil je hem laten runnen als je er
@@ -109,6 +108,7 @@ if( isempty(varlist) || (~isfield(anaReg.HemoCorr, 'ended')) )
 else
     disp('already done.');
 end
+    
 
 %% Mask
 
@@ -265,7 +265,7 @@ end
 disp('HbO HbR calculation')
 varlist = who(anaReg,'HbOHbR');
 
-% if( isempty(varlist) || (~isfield(anaReg.HbOHbR, 'ended')) )
+if( isempty(varlist) || (~isfield(anaReg.HbOHbR, 'ended')) )
     anaReg.HbOHbR = [];
     HbOHbRvar.started = datestr(now);
     try
@@ -280,15 +280,15 @@ varlist = who(anaReg,'HbOHbR');
     end
     anaReg.HbOHbR = HbOHbRvar;
     clear HbOHbRvar 
-% else
-%     disp('already done.')
-% end
+else
+    disp('already done.')
+end
 
 %% SpO2 calculation 
 disp('spO2 calculation')
 varlist = who(anaReg,'spO2');
 
-% if( isempty(varlist) || (~isfield(anaReg.spO2, 'ended')) )
+if( isempty(varlist) || (~isfield(anaReg.spO2, 'ended')) )
     anaReg.spO2 = [];
     spO2var.started = datestr(now);
     try
@@ -303,16 +303,66 @@ varlist = who(anaReg,'spO2');
     end
     anaReg.spO2 = spO2var;
     clear spO2var 
-% else
-%     disp('already done.')
-% end
+else
+    disp('already done.')
+end
 
+%% Bigger ROI
+disp('Clustering of ROI')
+varlist = who(anaReg,'ClusterROI');
+
+if( isempty(varlist) || (~isfield(anaReg.ClusterROI, 'ended')) )
+    anaReg.ClusterROI = [];
+    ClusterROIvar.started = datestr(now);
+    try
+        ClusterRois(DataFolder, 1);  %0 is negeer niet als files al bestaan, 1 is negeer het wel en overwrite
+        ClusterROIvar.ended = datestr(now);
+    catch e
+        disp(['spO2 error' DataFolder])
+        ClusterROIvar.error = datestr(now);
+        ClusterROIvar.def = e;
+        anaReg.ClusterROI = ClusterROIvar;
+        throw(e)
+    end
+    anaReg.ClusterROI = ClusterROIvar;
+    clear ClusterROIvar 
+else
+    disp('already done.')
+end
+
+
+%% Seed generator & Timecourse calculator
+disp('Generator of Seeds')
+varlist = who(anaReg,'SeedGen');
+
+if( isempty(varlist) || (~isfield(anaReg.SeedGen, 'ended')) )
+    anaReg.SeedGen = [];
+    SeedGenvar.started = datestr(now);
+    try
+        SeedGenerator(DataFolder, 'BigROI.mat', 1); %can be changed for 'ROI_149.mat'  
+        SeedGenvar.ended = datestr(now);
+    catch e
+        disp(['SeedGenerator error' DataFolder])
+        SeedGenvar.error = datestr(now);
+        SeedGenvar.def = e;
+        anaReg.SeedGen = SeedGenvar;
+        throw(e)
+    end
+    anaReg.SeedGen = SeedGenvar;
+    clear SeedGenvar 
+else
+    disp('already done.')
+end
+% Girls 10% are not corrected, so hypoxia starts at wrong time there
+
+
+
+%% end
 disp('Everything done! yay')
 close all
 clear anaReg DataFolder Mask varlist
 % pause(10);
 % disp('end of pause')
-
 
 
 end

@@ -44,13 +44,14 @@ for ind = 1:size(Glist,2)
     idx = strfind(Glist(ind).name, filesep); %zoek alle plekken van fileseps in naam
     pathFixed = [Glist(ind).name(1:idx(end)) 'Normoxia_1']; %pak naam tot laatste filesep, plak normoxia 1 achter
     load([pathFixed filesep 'ROI_149.mat']);
-    clear idx fid
+    clear fid
     
     Atlas = zeros(192);
     for indA = 1:size(ROI_info,2)
         Atlas(ROI_info(indA).Stats.ROI_binary_mask) = indA;
     end
-    OldMask = load([Glist(ind).name filesep 'MaskC.mat']); % om saturatie per acquisition weg te halen
+    OldMask = load([Glist(ind).name(1:idx(end)) 'Mask.mat']); %get general mask of mouse
+%     OldMask = load([Glist(ind).name filesep 'MaskC.mat']); % om saturatie per acquisition weg te halen
     OldMask = OldMask.Mask;
     Atlas = Atlas .*OldMask; %spo2 file is already within mask, but atlas file isnt yet
     clear indA OldMask
@@ -68,7 +69,7 @@ for ind = 1:size(Glist,2)
     spO2(spO2 == 0) = NaN;
     spO2 = reshape(spO2, (dims(1)*dims(2)), []);
     Mask = Mask&~reshape(any(isnan(spO2),2),192,192);
-    % Take Zscores to remove outliers
+    %% Take Zscores to remove outliers
     zscores_per_frame = zeros(size(spO2),'single');
     zscores_per_frame(Mask(:),:) = zscore(spO2(Mask(:),:), 0, 1);
     zscores_per_frame = abs(zscores_per_frame) <= 3; %this is now a mask
@@ -122,6 +123,22 @@ for ind = 1:size(Glist,2)
         mean_spO2_list(ind, :) = CorrectedspO2mean;
     end
 end
+
+%Delete Katy after first 8% hypoxia because went back too late
+for ind = 1:size(Glist,2)
+    idx = strfind(Glist(ind).name, 'Hypox_8_1'); 
+    index = strfind(Glist(ind).name, 'Katy');
+    if ~isempty(idx) && ~isempty(index)
+        CorrectedspO2median = median_spO2_list(ind, 1:24000); %remove last minutes, after error
+        CorrectedspO2median(:,end+1:48000) = missing;
+        median_spO2_list(ind, :) = CorrectedspO2median;
+        
+        CorrectedspO2mean = mean_spO2_list(ind, 1:24000);
+        CorrectedspO2mean(:,end+1:48000) = missing;
+        mean_spO2_list(ind, :) = CorrectedspO2mean;
+    end
+end
+
 
 save('/media/mbakker/data1/Hypoxia/spO2/spO2mean.mat', 'mean_spO2_list')
 save('/media/mbakker/data1/Hypoxia/spO2/spO2median.mat', 'median_spO2_list')

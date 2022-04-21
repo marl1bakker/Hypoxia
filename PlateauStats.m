@@ -5,9 +5,14 @@
 %
 % HypoxiaLevels, Glist: see HypoxPipelineCombi
 % Data: the data you want to do stats on
+% Prompt: 1 by default, if 0 will give 14,5 - 19,5 min 
 
 function [AveragePlateau, AverageBaseline, pvalues] = ...
-    PlateauStats(HypoxiaLevels, Glist, Data)
+    PlateauStats(HypoxiaLevels, Glist, Data, Prompt)
+
+if ~exist('Prompt', 'var')
+    Prompt = 1;
+end
 
 pvalues = [];
 AveragePlateau = [];
@@ -28,6 +33,7 @@ for index = 1:size(HypoxiaLevels, 2)
     end
     
     %% Prompt
+    if Prompt == 1
     %questionbox to indicate the location of the first peak and the plateau
     prompt = {'Start of plateau in frames', 'End of plateau in frames',...
         'Start of baseline in frames', 'End of baseline in frames (10800 is 9 min)'};
@@ -53,7 +59,12 @@ for index = 1:size(HypoxiaLevels, 2)
         startbaseline = str2num(answer{3})
     end
     
-
+    else
+        startbaseline = 4.5*20*60;
+        endbaseline = 9.5*20*60;
+        startplateau = 14.5*20*60;
+        endplateau = 19.5*20*60;
+    end
     %% Stats
     yMean = mean(DataPerHlevel, 1, 'omitnan'); %get mean of all animals
     

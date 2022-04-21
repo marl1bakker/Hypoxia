@@ -39,12 +39,13 @@ fid = fopen([DataFolder 'HbR.dat']);
 HbR = fread(fid,  inf, '*single');
 HbR = reshape(HbR, 192, 192, []);
 HbR = HbR + 40;
-Mask = load([DataFolder, 'MaskC.mat']); %load MaskC because that one is coregistered
-Mask = Mask.Mask;
-Mask = double(Mask);
-Mask(Mask==0) = NaN;
-HbO = HbO .* Mask;
-HbR = HbR .* Mask;
+% Mask = load([DataFolder, 'MaskC.mat']); %load MaskC because that one is coregistered
+% Mask = Mask.Mask;
+% Mask = double(Mask);
+% Mask(Mask==0) = NaN;
+% HbO = HbO .* Mask;
+% HbR = HbR .* Mask;
+
 HbT = HbO + HbR;
 
 spO2 = HbO ./ HbT;
