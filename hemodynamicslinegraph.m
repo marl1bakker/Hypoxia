@@ -161,8 +161,9 @@ for index = 1:size(HypoxiaLevels, 2)
 %     
 %     title([TitleList{index} ' - Mean'])
 %     f.Position = [10 10 1500 500]; %for size of screen before saving
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/Hemodynamics/' HypoxiaLevel '-HbOmean.tiff'])
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/Hemodynamics/' HypoxiaLevel '-HbOmean.fig'])
+    saveas(gcf, ['/media/mbakker/data1/Hypoxia/Hemodynamics/' HypoxiaLevel '-Hemodynamicsmean.tiff'])
+%     saveas(gcf, ['/media/mbakker/data1/Hypoxia/Hemodynamics/' HypoxiaLevel '-HbOmean.fig'])
+    saveas(gcf, ['/media/mbakker/data1/Hypoxia/Hemodynamics/' HypoxiaLevel '-Hemodynamicsmean.eps'], 'epsc')
     
     close all
 

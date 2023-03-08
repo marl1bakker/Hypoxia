@@ -4,7 +4,9 @@
 
 % DataType is 'HbO', 'HbR' or 'spO2'
 
-function SpatialDistribution(HypoxiaLevels, Glist, DataType, ManualInput)
+% 16-7-2022 adaptation: add scale, make axis equal
+
+function SpatialDistribution(HypoxiaLevels, Glist, DataType, ManualInput, GSR)
 if ~exist('ManualInput', 'var')
     ManualInput = 0;
 end
@@ -14,6 +16,10 @@ if( ManualInput == 0 ) && ( exist(['/media/mbakker/data1/Hypoxia/SpatialDist/' D
 end
 if( ManualInput == 1 ) && ( exist(['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType '/Hypox_8_1spatialdist-median.fig'], 'file') )
     disp([DataType ' spatial distribution already done, OVERWRITING FILES'])
+end
+
+if ~exist('GSR', 'var')
+    GSR = 0;
 end
 
 Differences = [];
@@ -44,8 +50,22 @@ for ind = 1:size(Glist,2)
     data = data.*Mask;
     data(data == 0) = NaN;
     
-    data = reshape(data, 192*192,[]);
+%     data = reshape(data, 192*192,[]);
     
+    %% GSR
+dims = size(data);
+data = reshape(data,[], dims(3));
+
+if GSR == 1
+    mS = mean(data,1, 'omitnan');
+    X = [ones(size(mS)); mS];
+    B = X'\data';
+    A = (X'*B)';
+    data = data - A; % - because its hbo hbr,
+    clear h Mask mS X B A;
+end
+    
+    %%
     %grab minute 2.5 to minute 7.5 for before hypoxia and minute 12.5 to
     %17.5 for hypoxia. Take the mean HbO values over that timeframe. Then
     %calculate the difference and plot it. Save in the folder of the
@@ -60,11 +80,27 @@ for ind = 1:size(Glist,2)
     else
         imagesc(Difference,'AlphaData', ~isnan(Difference), [-100 100])
     end
-    axis off
+    axis image
+    hold on
+    line([5 20.7], [5 5]);
+    line([5 5], [5 20.7]); %for scale, it's 157 pix for 10 mm
     colorbar
     title(Glist(ind).name)
-    saveas(gcf, [Glist(ind).name filesep 'SpatialDistribution_' DataType '.png']);
-%     saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist' filesep DataType filesep 'SpatialDistribution_227_' num2str(ind) '.png']);
+    
+    if GSR == 0
+        saveas(gcf, [Glist(ind).name filesep 'SpatialDistribution_' DataType '_noGSR.png']);
+    else
+        saveas(gcf, [Glist(ind).name filesep 'SpatialDistribution_' DataType '_GSR.png']);
+    end
+    
+    sepsloc = strfind(Glist(ind).name, filesep);
+    HypoxiaLevel = Glist(ind).name(sepsloc(end)+1:end);
+    
+    if contains(Glist(ind).name, '227') && GSR == 0
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist' filesep DataType filesep HypoxiaLevel '_227_noGSR.png']);
+    elseif contains(Glist(ind).name, '227') && GSR == 1
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist' filesep DataType filesep HypoxiaLevel '_227_GSR.png']);
+    end
     
     %In order to combine mice of the same hypox value, also save the
     %difference in the array, together with the name so you can match
@@ -73,42 +109,51 @@ for ind = 1:size(Glist,2)
     Differences = [Differences; Difference];
     %Like this you will have the maps of all acquisitions below each other.
     
+    close all
 end
 
 
-
-save(['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType '/Differences.mat'], 'Differences');
-
+if GSR == 0
+    save(['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType '/Differences_noGSR.mat'], 'Differences');
+else
+    save(['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType '/Differences_GSR.mat'], 'Differences');
+end
 
 %% Combine all acquisitions of the same level
-for index = 1:size(HypoxiaLevels, 2)
-    HypoxiaLevel = HypoxiaLevels{index};
-    Hlevel = [];
-    for ind = 1:size(Glist,2)
-        idx = strfind(Glist(ind).name, HypoxiaLevel);
-        if ~isempty(idx)
-            Hlevel = [Hlevel; Differences(ind, :)];
-        end
-    end
-    AvHlevelmean = mean(Hlevel, 1, 'omitnan');
-    AvHlevelmean = reshape(AvHlevelmean, 192,192);
-    imagesc(AvHlevelmean,'AlphaData', ~isnan(AvHlevelmean), [-0.25 0.25])
-    axis off
-    colorbar
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-mean.tiff']);
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-mean.fig']);
-    close all
+% for index = 1:size(HypoxiaLevels, 2)
+%     HypoxiaLevel = HypoxiaLevels{index};
+%     Hlevel = [];
+%     for ind = 1:size(Glist,2)
+%         idx = strfind(Glist(ind).name, HypoxiaLevel);
+%         if ~isempty(idx)
+%             Hlevel = [Hlevel; Differences(ind, :)];
+%         end
+%     end
+%     AvHlevelmean = mean(Hlevel, 1, 'omitnan');
+%     AvHlevelmean = reshape(AvHlevelmean, 192,192);
+%     
+%     if matches(DataType, 'spO2')
+%         imagesc(AvHlevelmean,'AlphaData', ~isnan(AvHlevelmean), [-0.25 0.25])
+%     else
+%         imagesc(AvHlevelmean,'AlphaData', ~isnan(AvHlevelmean), [-100 100])
+%     end
+%     axis equal
+%     axis off
+%     colorbar
+%     saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-mean.tiff']);
+% %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-mean.fig']);
+%     close all
 
-    AvHlevelmedian = median(Hlevel, 1, 'omitnan');
-    AvHlevelmedian = reshape(AvHlevelmedian, 192,192);
-%     imagesc(AvHlevelmedian)
-   imagesc(AvHlevelmedian,'AlphaData', ~isnan(AvHlevelmedian), [-0.25 0.25])
-    axis off
-    colorbar
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-median.tiff']);
-    saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-median.fig']);
-    close all
-end
+%     AvHlevelmedian = median(Hlevel, 1, 'omitnan');
+%     AvHlevelmedian = reshape(AvHlevelmedian, 192,192);
+% %     imagesc(AvHlevelmedian)
+%    imagesc(AvHlevelmedian,'AlphaData', ~isnan(AvHlevelmedian), [-0.25 0.25])
+%     axis off
+%     colorbar
+% %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-median.tiff']);
+%     saveas(gcf, ['/media/mbakker/data1/Hypoxia/SpatialDist/' DataType filesep HypoxiaLevel DataType 'spatialdist-median.fig']);
+%     close all
+% end
 
 
 end

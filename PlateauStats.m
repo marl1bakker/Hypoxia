@@ -7,7 +7,7 @@
 % Data: the data you want to do stats on
 % Prompt: 1 by default, if 0 will give 14,5 - 19,5 min 
 
-function [AveragePlateau, AverageBaseline, pvalues] = ...
+function [AveragePlateau, AverageBaseline, pvalues, qvalues] = ...
     PlateauStats(HypoxiaLevels, Glist, Data, Prompt)
 
 if ~exist('Prompt', 'var')
@@ -44,7 +44,10 @@ for index = 1:size(HypoxiaLevels, 2)
     opts.WindowStyle = 'normal';
     answer = inputdlg(prompt,dlgtitle,dimensions,definput, opts);
     clear prompt dlgtitle dimensions definput opts
-    
+        startbaseline = 4.5*20*60;
+        endbaseline = 9.5*20*60;
+        startplateau = 14.5*20*60;
+        endplateau = 19.5*20*60;
     startplateau = str2num(answer{1});
     endplateau = str2num(answer{2});
     endbaseline = str2num(answer{4});
@@ -56,7 +59,7 @@ for index = 1:size(HypoxiaLevels, 2)
             disp(['Baseline start adjusted to 1. Baseline might be shorter in duration than plateau for ' HypoxiaLevel])
         end
     else
-        startbaseline = str2num(answer{3})
+        startbaseline = str2num(answer{3});
     end
     
     else
@@ -79,10 +82,18 @@ for index = 1:size(HypoxiaLevels, 2)
     
     AverageBaseline = [AverageBaseline; averagebaseline, stdbaseline];
     
-    
-    [~,p] = ttest(mean(DataPerHlevel(:, startplateau:endplateau),2), ...
-        mean(DataPerHlevel(:, startbaseline:endbaseline),2));
+    %wilcox signed rank test
+    differences = DataPerHlevel(:, startplateau:endplateau) - DataPerHlevel(:, startbaseline:endbaseline);
+    differences = mean(differences, 2); %make sure you have the average of each mouse
+    [p, ~, ~] = signrank(differences);
     pvalues = [pvalues; p];
+    
+    %student t test
+%     [~,p] = ttest(mean(DataPerHlevel(:, startplateau:endplateau),2), ...
+%         mean(DataPerHlevel(:, startbaseline:endbaseline),2));
+%     pvalues = [pvalues; p];
     % UNSURE ABOUT P VALUES
     
+end
+    qvalues = mafdr(reshape(pvalues, [], 1),'BHFDR', 'true');
 end

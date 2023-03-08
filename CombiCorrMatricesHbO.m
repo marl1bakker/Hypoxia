@@ -1,4 +1,4 @@
-function CombiCorrMatrices(HypoxiaLevels, Glist, ManualInput, GSR)
+function CombiCorrMatricesHbO(HypoxiaLevels, Glist, ManualInput, GSR)
 
 if ~exist('ManualInput', 'var')
     ManualInput = 0;
@@ -8,17 +8,17 @@ if ~exist('GSR', 'var')
     GSR = 1;
 end
 
-if( ManualInput == 0 ) && GSR == 1 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before.tiff', 'file') )
+if( ManualInput == 0 ) && GSR == 1 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_HbO.tiff', 'file') )
     disp('Correlation matrices already done, exited function')
     return;
-elseif( ManualInput == 0 ) && GSR == 0 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_NoGSR.tiff', 'file') )
+elseif( ManualInput == 0 ) && GSR == 0 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_HbO_NoGSR.tiff', 'file') )
     disp('Correlation matrices (no GSR) already done, exited function')
     return;
 end
 
-if( ManualInput == 1 ) && GSR == 1 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before.tiff', 'file') )
+if( ManualInput == 1 ) && GSR == 1 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_HbO.tiff', 'file') )
     disp('Correlation matrices already done, OVERWRITING FILES')
-elseif ( ManualInput == 1 ) && GSR == 0 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_NoGSR.tiff', 'file') )
+elseif ( ManualInput == 1 ) && GSR == 0 && ( exist('/media/mbakker/data1/Hypoxia/CorrMatrix/Hypox_8_2_Before_HbO_NoGSR.tiff', 'file') )
     disp('Correlation matrices (no GSR) already done, OVERWRITING FILES')
 end
 
@@ -34,9 +34,9 @@ for index = 1:size(HypoxiaLevels, 2)
         idx = strfind(Glist(ind).name, HypoxiaLevel);
         if ~isempty(idx)
             if GSR == 1
-                load([Glist(ind).name filesep 'Timecourses.mat']);
+                load([Glist(ind).name filesep 'TimecoursesHbO.mat']);
             else
-                load([Glist(ind).name filesep 'Timecourses_NoGSR.mat']);
+                load([Glist(ind).name filesep 'TimecoursesHbO_NoGSR.mat']);
             end
             
             % if it's the girls 10%, correct for hypoxia timing, if its 552
@@ -68,11 +68,11 @@ for index = 1:size(HypoxiaLevels, 2)
     end
     
     if GSR == 1
-        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Before.mat'], 'CorrBefore');
-        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Hypox.mat'], 'CorrHypox');
+        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Before_HbO.mat'], 'CorrBefore');
+        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Hypox_HbO.mat'], 'CorrHypox');
     else
-        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Before_NoGSR.mat'], 'CorrBefore');
-        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Hypox_NoGSR.mat'], 'CorrHypox');
+        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Before_HbO_NoGSR.mat'], 'CorrBefore');
+        save(['/media/mbakker/data1/Hypoxia/CorrMatrix/ForStats/' HypoxiaLevel '_Hypox_HbO_NoGSR.mat'], 'CorrHypox');
     end
 
     
@@ -131,9 +131,9 @@ for index = 1:size(HypoxiaLevels, 2)
     colormap(NL)
     colorbar
     if GSR == 1
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before_HbO.tiff']);
     else
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before_NoGSR.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before_HbO_NoGSR.tiff']);
     end
     %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before.fig'])
     %     save(['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Before.mat'], 'CorrBefore');
@@ -160,9 +160,9 @@ for index = 1:size(HypoxiaLevels, 2)
     colormap(NL)
     colorbar
     if GSR == 1
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox_HbO.tiff']);
     else
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox_NoGSR.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox_HbO_NoGSR.tiff']);
     end
     %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox.fig']);
     %         save(['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Hypox.mat'], 'CorrHypox');
@@ -189,9 +189,9 @@ for index = 1:size(HypoxiaLevels, 2)
     colormap(NL)
     colorbar
     if GSR == 1
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After_HbO.tiff']);
     else
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After_NoGSR.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After_HbO_NoGSR.tiff']);
     end
     %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After.fig']);
     %      save(['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_After.mat'], 'CorrAfter');
@@ -218,9 +218,9 @@ for index = 1:size(HypoxiaLevels, 2)
     colormap(NL)
     colorbar
     if GSR == 1
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff_HbO.tiff']);
     else
-        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff_NoGSR.tiff']);
+        saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff_HbO_NoGSR.tiff']);
     end
     %     saveas(gcf, ['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff.fig']);
     %         save(['/media/mbakker/data1/Hypoxia/CorrMatrix/' HypoxiaLevel '_Diff.mat'], 'CorrDiff');
